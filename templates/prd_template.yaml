@@ -1,0 +1,183 @@
+# PRD Template
+# Defines required sections for product requirement documents
+
+template_name: "Product Requirements Document"
+version: "1.0"
+
+sections:
+  - name: "Executive Summary"
+    required: true
+    severity: "critical"
+    description: "What problem are we solving and for whom?"
+    keywords: 
+      - "problem"
+      - "pain point"
+      - "user need"
+      - "customer feedback"
+      - "build"
+      - "need"
+      - "require"
+      - "gap"
+      - "business case"
+      - "solution"
+      - "value"
+      - "problem statement"
+    
+  - name: "Success Metrics"
+    required: true
+    severity: "critical"
+    description: "How will we measure success?"
+    keywords:
+      - "metric"
+      - "KPI"
+      - "goal"
+      - "target"
+      - "measure"
+      - "benchmark"
+    
+  - name: "Assumptions"
+    required: true
+    severity: "critical"
+    description: "Who are the users and what do we assume they need?"
+    keywords:
+      - "assume"
+      - "will be"
+      - "should be"
+      - "would launch"
+      - "would be built"
+    
+  - name: "Scope & Requirements"
+    required: true
+    severity: "critical"
+    description: "What's in scope and out of scope?"
+    keywords:
+      - "in scope"
+      - "out of scope"
+      - "not included"
+      - "phase"
+      - "out of immediate"
+      - "TBC"
+      - "table"
+      - "capability"
+      - "market"
+      - "region"
+      - "country"
+      - "localization"
+      - "compliance"
+    
+  - name: "User Journeys"
+    required: true
+    severity: "high"
+    description: "What will our consumers experience?"
+    keywords:
+      - "as a"
+      - "I'd like to"
+      - "so that"
+      - "journey"
+      - "jtbd"
+  
+  - name: "Technical Considerations"
+    required: true
+    severity: "high"
+    description: "Technical dependencies, constraints, APIs"
+    keywords:
+      - "API"
+      - "integration"
+      - "database"
+      - "performance"
+      - "technical"
+      - "architecture"
+      - "instance"
+      - "RFC"
+      - "spike"
+      - "adr"
+      - "routing"
+      - "Miro"
+      - "diagram"
+      - "architectural"
+      - "service"
+      - "pipeline"
+      - "flow"
+      - "specs"
+      
+  - name: "Open Questions"
+    required: true
+    severity: "high"
+    description: "Anything that isn't an assumption and needs to be clarified with an owner"
+    keywords:
+      - "question"
+      - "owner"
+      - "notes"
+      - "date answered"
+      - "?"
+    
+  - name: "Edge Cases"
+    required: true
+    severity: "medium"
+    description: "Error scenarios, edge cases, failure modes"
+    keywords:
+      - "edge case"
+      - "error"
+      - "failure"
+      - "exception"
+      - "what if"
+    
+  - name: "Security & Privacy"
+    required: true
+    severity: "critical"
+    description: "Data privacy, PCI compliance, GDPR considerations"
+    keywords:
+      - "security"
+      - "privacy"
+      - "GDPR"
+      - "PCI"
+      - "data protection"
+      - "compliance"
+      - "legal"
+      - "CCPA"
+      - "DMCCA"
+      - "CMA"
+      - "EU"
+    
+  - name: "Dependencies"
+    required: false
+    severity: "medium"
+    description: "What needs to be done first? What are we blocked by?"
+    keywords:
+      - "dependency"
+      - "depends on"
+      - "blocked by"
+      - "requires"
+      - "prerequisite"
+    
+  - name: "Timeline"
+    required: false
+    severity: "medium"
+    description: "Estimated timeline and milestones"
+    keywords:
+      - "timeline"
+      - "deadline"
+      - "milestone"
+      - "sprint"
+      - "phase"
+  
+  - name: "Out of Scope"
+    required: true
+    severity: "high"
+    description: "What is deprioritised?"
+    keywords:
+      - "requirement"
+      - "market"
+      - "release"
+      - "phase"
+      - "tier"
+      - "medium"
+      - "low"
+      - "high"
+    
+
+scoring:
+  critical_weight: 10
+  high_weight: 7
+  medium_weight: 3
+  passing_score: 90  # Out of 100
