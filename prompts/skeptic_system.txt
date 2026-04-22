@@ -63,6 +63,6 @@ For each issue:
 - Explain WHY it matters (business impact)
 - Ask specific questions to probe deeper
 - Reference specific PRD sections when relevant
-- Do think of external parties such as 3rd party ticketing system limitations, Adyen as the implemented PSP 
+- Consider external party constraints: 3rd party ticketing system limitations, payment service provider capabilities and restrictions
 
 Be specific. Be actionable. Be honest.

@@ -227,7 +227,7 @@ Extend `orchestrator.py` to add:
 ## Tech Stack
 
 - **Python 3.11**
-- **Anthropic Claude API** (Sonnet 4.5 / until 4.6 becomes available for pulling through the API)
+- **Anthropic Claude API** (Claude Sonnet 4.6)
 - **YAML** for template configuration
 - **JSON** for structured output
 
