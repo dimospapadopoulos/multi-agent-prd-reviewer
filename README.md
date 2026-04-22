@@ -2,6 +2,17 @@
 
 AI-powered system that uses four specialised agents to review Product Requirement Documents, combining rule-based validation with AI-driven technical, UX, and legal critique.
 
+Update 22/04/26
+Before I built the agentic workflow, I began with v1: one validator agent runnint like a Head of product in a Terminal (archived repo). Then built prd-validator-slack2.0 for the validator to accept the input in copy paste format via Slack and then push through Render to Claude AI which validates the sections and pushes a validation critique and sections missing and a score back to Slack for the PM to see.
+Leaving these public repos open to show the evolution:
+Early Feb 2026: prd-completeness-validator in terminal
+Mid Feb 2026: prd-validator-slack2.0 to run and validate in Slack directly
+End Feb 2026: multi-agent-prd-reviewer to enable an agentic workflow in production with agents 1 and 2 validating and critiquing
+Early March 2026: v3 in multi-agent-prd-reviewer for Slack formatting accepting pdfs/docx files and adding company context in the critique agent
+April 2026: v4 adding 2 more specialised agents in multi-agent-prd-reviewer
+
+These are highly sanitised repos for porfolio purposes, rather than the end2end production tools I am running internally in my current employer.
+
 ## The Problem
 
 PRD quality varies wildly across teams. Manual reviews are:
