@@ -4,6 +4,8 @@ Agents that collaborate to review and critique PRDs
 """
 
 from .validator_agent import ValidatorAgent
-from .skeptic_agent import SkepticAgent  # ← Uncommented!
+from .skeptic_agent import SkepticAgent
+from .ux_agent import UXAgent
+from .legal_agent import LegalAgent
 
-__all__ = ['ValidatorAgent', 'SkepticAgent']  # ← Added back
+__all__ = ['ValidatorAgent', 'SkepticAgent', 'UXAgent', 'LegalAgent']
