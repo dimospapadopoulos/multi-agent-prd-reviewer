@@ -1,50 +1,61 @@
 # Multi-Agent PRD Reviewer
 
-AI-powered system that uses multiple specialized agents to review Product Requirement Documents, combining rule-based validation with AI-driven technical critique.
+AI-powered system that uses four specialised agents to review Product Requirement Documents, combining rule-based validation with AI-driven technical, UX, and legal critique.
 
 ## The Problem
 
 PRD quality varies wildly across teams. Manual reviews are:
 - Time-consuming (30+ minutes per PRD)
 - Inconsistent (depends on reviewer's expertise)
-- Often miss edge cases or technical risks
+- Often miss edge cases, UX gaps, or compliance risks
 - Don't scale across 10+ product managers
 
 ## The Solution
 
-A multi-agent AI system where specialized agents collaborate to review PRDs:
+A multi-agent AI system where specialised agents collaborate to review PRDs in sequence, each building on the context of the agents before it:
 
 **Agent 1: Validator** - Rules-based completeness checker
 - Validates PRD against 12 quality standards
 - Scores 0-100 based on weighted sections
-- Flags missing critical sections
+- Flags missing critical, high, and medium sections
 
-**Agent 2: Skeptical Tech Lead** - AI-driven technical challenger  
+**Agent 2: Skeptical Tech Lead** - AI-driven technical challenger
 - Challenges assumptions with domain expertise
-- Identifies hidden complexity and risks
-- Probes feasibility and edge cases
+- Identifies hidden complexity and feasibility risks
+- Probes edge cases, scale, and operational concerns
 - Asks tough questions PMs often miss
 
-**Orchestrator** - Coordinates agents and synthesizes results
-- Runs agents in sequence
-- Combines findings into comprehensive review
-- Provides overall recommendation
-- Saves structured output
+**Agent 3: UX and Design Reviewer** - AI-driven experience critic
+- Reviews user flows and identifies missing UI states (loading, error, empty, success, offline)
+- Flags accessibility gaps (WCAG 2.1 AA)
+- Challenges design system consistency and mobile experience
+- Surfaces conversion and usability risks
+
+**Agent 4: Legal and Compliance Reviewer** - AI-driven compliance auditor
+- Surfaces GDPR, PCI DSS, and SCA obligations
+- Flags consumer protection and market-specific regulatory gaps
+- Identifies missing audit trail and data retention requirements
+- Recommends legal sign-off needed before build
+
+**Orchestrator** - Coordinates agents and synthesises results
+- Runs agents sequentially, passing accumulated context forward
+- Combines findings into a comprehensive multi-layer review
+- Provides overall recommendation and saves structured output
 
 ## Real-World Impact
 
 **Before:**
 - 30-minute manual PRD review
-- Inconsistent quality across team
-- Technical gaps discovered during build (costly)
+- Inconsistent quality across the team
+- Technical, UX, and legal gaps discovered during build (costly)
 
 **After:**
-- 30-second automated review
-- Consistent quality standards
-- Risks surfaced before engineering (savings: 2+ weeks rework per issue)
+- ~60-second automated four-layer review
+- Consistent quality standards across all PRDs
+- Risks surfaced before engineering (savings: 2+ weeks rework per issue caught)
 
 **Example finding:**
-> PRD assumed "Apple Pay is trusted" without contingency plan. Skeptic agent asked: "What happens when Apple deprecates this API? What's our migration path?" Caught critical gap pre-engineering.
+> PRD assumed "Apple Pay is trusted" without a contingency plan. Skeptic agent asked: "What happens when Apple deprecates this API? What's our migration path?" Caught critical gap pre-engineering.
 
 ## Architecture
 ```
@@ -53,18 +64,27 @@ User submits PRD
 Agent 1: Validator
     - Validates completeness (12 sections)
     - Scores 0-100
-    - Identifies gaps
+    - Identifies missing sections by severity
     ↓
 Agent 2: Skeptical Tech Lead
     - Reviews PRD + validation results
-    - Challenges assumptions
-    - Questions feasibility
-    - Identifies risks
+    - Challenges assumptions and feasibility
+    - Identifies technical risks and edge cases
+    ↓
+Agent 3: UX and Design Reviewer
+    - Reviews PRD + validation + technical critique
+    - Surfaces missing UI states and flow gaps
+    - Flags accessibility and design system risks
+    ↓
+Agent 4: Legal and Compliance Reviewer
+    - Reviews PRD + all prior critiques
+    - Identifies GDPR, PCI DSS, and regulatory gaps
+    - Recommends legal sign-off requirements
     ↓
 Orchestrator
-    - Synthesizes findings
-    - Generates recommendation
-    - Saves structured output
+    - Synthesises findings from all four agents
+    - Generates overall recommendation
+    - Saves structured output (JSON + console)
     ↓
 Final Review (JSON + Console)
 ```
@@ -96,61 +116,82 @@ python orchestrator.py path/to/your_prd.md
 
 ### Output
 
-**Console:** Pretty-printed review with validation results and technical critique
+**Console:** Pretty-printed review with validation results and all four critiques
 
-**File:** JSON saved to `output/` with complete structured data
+**File:** JSON saved to `output/` with complete structured data including per-agent token usage
 
 ### Example Output
 ```
 ================================================================================
-🤖 MULTI-AGENT PRD REVIEW: Apple Pay Integration
+MULTI-AGENT PRD REVIEW: Apple Pay Integration
 ================================================================================
 
-📋 Step 1/2: Running Validator Agent...
-   ✅ Validation Complete: 79/100 ⚠️
+Step 1/4: Running Validator Agent...
+   Validation complete: 79/100 ⚠️
 
-🤔 Step 2/2: Running Skeptical Tech Lead Agent...
-   ✅ Critique Complete (1247 tokens)
+Step 2/4: Running Skeptical Tech Lead Agent...
+   Technical critique complete (1247 tokens)
+
+Step 3/4: Running UX and Design Reviewer Agent...
+   UX critique complete (1183 tokens)
+
+Step 4/4: Running Legal and Compliance Reviewer Agent...
+   Legal critique complete (1091 tokens)
 
 ================================================================================
-📊 FINAL REVIEW: Apple Pay Integration
+FINAL REVIEW: Apple Pay Integration
 ================================================================================
 
 **OVERALL STATUS:** NEEDS ITERATION
 **COMPLETENESS:** 79/100
-**RECOMMENDATION:** Address missing sections and technical concerns before engineering review.
+**RECOMMENDATION:** Address missing sections and resolve technical, UX, and
+compliance concerns before engineering review.
 
 ────────────────────────────────────────────────────────────────────────────────
-📋 VALIDATION RESULTS
+VALIDATION RESULTS
 ────────────────────────────────────────────────────────────────────────────────
 Score: 79/100 ⚠️
 Status: NEEDS IMPROVEMENT
 
-🟡 High Priority Missing (1):
-   • Open Questions
+High Priority Missing (1):
+   - Open Questions
 
-✅ Found: 11/12 sections
+Found: 11/12 sections
 
 ────────────────────────────────────────────────────────────────────────────────
-🤔 TECHNICAL CRITIQUE
+TECHNICAL CRITIQUE (Agent 2)
 ────────────────────────────────────────────────────────────────────────────────
-[Detailed AI-generated critique challenging assumptions, identifying risks, etc.]
+[Detailed AI-generated critique challenging assumptions, identifying risks...]
+
+────────────────────────────────────────────────────────────────────────────────
+UX AND DESIGN CRITIQUE (Agent 3)
+────────────────────────────────────────────────────────────────────────────────
+[Missing UI states, accessibility gaps, flow issues...]
+
+────────────────────────────────────────────────────────────────────────────────
+LEGAL AND COMPLIANCE CRITIQUE (Agent 4)
+────────────────────────────────────────────────────────────────────────────────
+[GDPR, PCI DSS, SCA, consumer protection obligations...]
 ```
 
 ## Project Structure
 ```
 multi-agent-prd-reviewer/
-├── orchestrator.py           # Main CLI and coordination logic
+├── orchestrator.py               # Main CLI and coordination logic
 ├── agents/
-│   ├── validator_agent.py    # Rule-based completeness validator
-│   └── skeptic_agent.py      # AI-powered technical challenger
+│   ├── validator_agent.py        # Rule-based completeness validator
+│   ├── skeptic_agent.py          # AI-powered technical challenger
+│   ├── ux_agent.py               # AI-powered UX and design reviewer
+│   └── legal_agent.py            # AI-powered legal and compliance reviewer
 ├── prompts/
-│   └── skeptic_system.txt    # System prompt encoding tech lead expertise
+│   ├── skeptic_system.txt        # System prompt: tech lead expertise
+│   ├── ux_system.txt             # System prompt: UX designer expertise
+│   └── legal_system.txt          # System prompt: legal and compliance expertise
 ├── templates/
-│   └── prd_template.yaml     # Quality standards and scoring weights
+│   └── prd_template.yaml         # Quality standards and scoring weights
 ├── examples/
-│   └── sample_prd.md         # Example PRD for testing
-├── output/                   # Review results (JSON)
+│   └── sample_prd.md             # Example PRD for testing
+├── output/                       # Review results (JSON)
 ├── requirements.txt
 └── README.md
 ```
@@ -159,63 +200,62 @@ multi-agent-prd-reviewer/
 
 ### Modify Quality Standards
 
-Edit `templates/prd_template.yaml` to customize:
+Edit `templates/prd_template.yaml` to customise:
 - Required sections
 - Severity levels (critical, high, medium)
 - Keyword detection rules
 - Scoring weights
 
-### Adjust Tech Lead Persona
+### Adjust Agent Personas
 
-Edit `prompts/skeptic_system.txt` to change:
-- Domain expertise (payments, infrastructure, etc.)
-- Question focus areas
-- Critique style and tone
-- Output format
+Each agent has a dedicated system prompt in `prompts/`:
+- `skeptic_system.txt` — domain expertise, question focus areas, critique tone
+- `ux_system.txt` — UX principles, design system conventions, accessibility standards
+- `legal_system.txt` — applicable regulations, markets, compliance thresholds
 
 ### Add More Agents
 
-Extend `orchestrator.py` to add:
-- Agent 3: Design Reviewer (UX considerations)
-- Agent 4: Compliance Checker (GDPR, PCI, etc.)
+Extend `orchestrator.py` to add further specialists:
 - Agent 5: Competitive Analyst (market positioning)
+- Agent 6: Data and Analytics Reviewer (instrumentation gaps)
+- Agent 7: Accessibility Auditor (deep WCAG review)
 
 ## What I Learned
 
 **Multi-Agent Architecture:**
-- Agent specialization vs generalization tradeoffs
-- Passing context between agents (structured data)
-- Prompt engineering for different agent personas
+- Agent specialisation vs generalisation tradeoffs
+- Passing accumulated context between agents without redundancy
+- Prompt engineering to make agents complement rather than repeat each other
 - Orchestration patterns for sequential vs parallel agents
 
 **Prompt Engineering:**
-- System prompts that encode domain expertise
-- Context management (PRD + validation results)
-- Output formatting for structured critique
-- Balancing specificity vs flexibility
+- System prompts that encode deep domain expertise
+- Context management across a four-agent chain
+- Output formatting for structured, layered critique
+- Balancing specificity with flexibility across different PRD types
 
 **Production Considerations:**
-- Token usage optimization (avg 1200 tokens/review)
+- Token usage optimisation (avg ~3,500 tokens per full review)
 - Error handling for API calls
-- Structured output for downstream use
+- Structured output for downstream use (Slack, Confluence)
 - CLI design for team adoption
 
 **Business Impact:**
-- Encoding PM judgment into autonomous systems
-- Scaling expertise across teams
-- Catching issues pre-build (10x cost savings)
-- Creating institutional knowledge that survives turnover
+- Encoding PM, tech lead, UX, and legal judgment into autonomous agents
+- Scaling multi-disciplinary expertise across teams
+- Catching issues pre-build (10x cost savings vs post-build rework)
+- Creating institutional knowledge that survives team turnover
 
 ## Future Enhancements
 
-- [ ] Slack bot integration (like PRD Validator v2)
+- [ ] Slack bot integration (post complete review to channel on PRD submission)
 - [ ] Batch processing (review 10+ PRDs at once)
-- [ ] Historical tracking (how has quality improved over time?)
-- [ ] Team leaderboard (gamify quality)
+- [ ] Historical tracking (how has PRD quality improved over time?)
+- [ ] Team leaderboard (gamify quality standards)
 - [ ] Custom agent personalities per team/domain
 - [ ] Integration with Confluence/Notion
 - [ ] PDF report generation
-- [ ] Agent 3: Design reviewer for UX considerations
+- [ ] Agent 5: Competitive Analyst
 
 ## Related Projects
 
@@ -227,13 +267,13 @@ Extend `orchestrator.py` to add:
 ## Tech Stack
 
 - **Python 3.11**
-- **Anthropic Claude API** (Sonnet 4.5 / until 4.6 becomes available for pulling through the API)
+- **Anthropic Claude API** (Claude Sonnet 4.6)
 - **YAML** for template configuration
 - **JSON** for structured output
 
 ---
 
 **Built by:** Dimos Papadopoulos  
-**Role:** Product Leader 
+**Role:** Product Leader  
 **Why:** To scale PM expertise through autonomous AI agents  
 **License:** BSD-3

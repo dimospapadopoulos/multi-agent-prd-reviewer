@@ -30,7 +30,7 @@ class SkepticAgent:
             raise ValueError("ANTHROPIC_API_KEY not found in environment or provided")
         
         self.client = Anthropic(api_key=self.api_key)
-        self.model = "claude-sonnet-4-20250514"  # Latest Sonnet
+        self.model = "claude-sonnet-4-6"
         
         # Load system prompt
         with open(system_prompt_path, 'r', encoding='utf-8') as f:
