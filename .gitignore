@@ -6,3 +6,4 @@ venv/
 Thumbs.db
 output/*.json
 output/*.txt
+*.log
