@@ -100,25 +100,70 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Edit .env — add ANTHROPIC_API_KEY and (optionally) Slack tokens
 ```
 
 ## Usage
 
-### CLI Interface
+### Option A: CLI
 ```bash
-# Review a PRD
+# Review a PRD file directly
 python orchestrator.py examples/sample_prd.md
 
 # Review your own PRD
 python orchestrator.py path/to/your_prd.md
 ```
 
-### Output
+**Console:** Pretty-printed review with all four critiques  
+**File:** JSON saved to `output/` with complete structured data and per-agent token usage
 
-**Console:** Pretty-printed review with validation results and all four critiques
+---
 
-**File:** JSON saved to `output/` with complete structured data including per-agent token usage
+### Option B: Slack Bot
+
+The Slack bot runs the same four-agent pipeline and posts the results as formatted Block Kit messages directly into the channel.
+
+**Two ways to submit a PRD:**
+1. **Slash command** — type `/review-prd` in any channel → paste PRD name and text into the modal → submit
+2. **File upload** — share any `.md` file in a channel where the bot is present → review runs automatically
+
+**Setup:**
+
+#### 1. Create a Slack App
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
+2. Name it `PRD Reviewer` and pick your workspace
+
+#### 2. Configure OAuth scopes
+In **OAuth & Permissions → Scopes → Bot Token Scopes**, add:
+| Scope | Purpose |
+|---|---|
+| `chat:write` | Post review results |
+| `commands` | Register `/review-prd` |
+| `files:read` | Download uploaded `.md` files |
+
+#### 3. Enable Socket Mode
+In **Socket Mode**, toggle it on and create an **App-Level Token** with `connections:write` scope.  
+Copy the `xapp-...` token → `SLACK_APP_TOKEN` in your `.env`.
+
+#### 4. Add the slash command
+In **Slash Commands** → **Create New Command**:
+- Command: `/review-prd`
+- Request URL: *(any placeholder — Socket Mode ignores this)*
+- Description: `Run 4-agent PRD review`
+
+#### 5. Subscribe to events
+In **Event Subscriptions**, enable events and subscribe to **Bot Events**:
+- `file_shared`
+
+#### 6. Install the app and copy tokens
+**Install App** → copy the `xoxb-...` **Bot User OAuth Token** → `SLACK_BOT_TOKEN` in your `.env`.
+
+#### 7. Run the bot
+```bash
+python slack_bot.py
+```
+
+The bot connects over a persistent WebSocket — no public URL required.
 
 ### Example Output
 ```
@@ -178,6 +223,7 @@ LEGAL AND COMPLIANCE CRITIQUE (Agent 4)
 ```
 multi-agent-prd-reviewer/
 ├── orchestrator.py               # Main CLI and coordination logic
+├── slack_bot.py                  # Slack bot (slash command + file upload)
 ├── agents/
 │   ├── validator_agent.py        # Rule-based completeness validator
 │   ├── skeptic_agent.py          # AI-powered technical challenger
@@ -187,6 +233,8 @@ multi-agent-prd-reviewer/
 │   ├── skeptic_system.txt        # System prompt: tech lead expertise
 │   ├── ux_system.txt             # System prompt: UX designer expertise
 │   └── legal_system.txt          # System prompt: legal and compliance expertise
+├── utils/
+│   └── slack_formatter.py        # Converts review dict → Slack Block Kit blocks
 ├── templates/
 │   └── prd_template.yaml         # Quality standards and scoring weights
 ├── examples/
@@ -248,7 +296,6 @@ Extend `orchestrator.py` to add further specialists:
 
 ## Future Enhancements
 
-- [ ] Slack bot integration (post complete review to channel on PRD submission)
 - [ ] Batch processing (review 10+ PRDs at once)
 - [ ] Historical tracking (how has PRD quality improved over time?)
 - [ ] Team leaderboard (gamify quality standards)
