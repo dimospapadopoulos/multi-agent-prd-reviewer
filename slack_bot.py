@@ -1,6 +1,6 @@
 """
 Multi-Agent PRD Reviewer — Slack Bot
-Listens for /review-prd slash commands and .md file uploads,
+Listens for /review-prd slash commands and .md/.pdf file uploads,
 runs the four-agent pipeline, and posts Block Kit results back to Slack.
 
 Requires Socket Mode (no public URL needed):
@@ -10,6 +10,7 @@ Requires Socket Mode (no public URL needed):
 """
 
 import os
+import time
 import threading
 import requests
 from dotenv import load_dotenv
@@ -18,10 +19,43 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 from orchestrator import PRDReviewOrchestrator
 from utils.slack_formatter import format_review_blocks
+from utils.file_reader import extract_text
 
 load_dotenv()
 
 app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
+
+# ── File-ID deduplication ────────────────────────────────────────────────────
+#
+# Slack's file_shared event fires once per channel a file appears in.
+# If the bot is present in multiple channels, or if Slack retries the event
+# due to a slow network ACK, the same file_id can arrive several times.
+# We guard against that with a thread-safe registry of recently seen IDs.
+
+_seen_files: dict[str, float] = {}   # file_id → epoch when first claimed
+_seen_lock = threading.Lock()
+_DEDUP_TTL = 120                      # seconds — ignore duplicates within this window
+
+
+def _claim_file(file_id: str) -> bool:
+    """
+    Atomically claim a file_id for processing.
+
+    Returns True the first time this file_id is seen within _DEDUP_TTL seconds,
+    False on every subsequent call (i.e. the duplicate should be dropped).
+    """
+    with _seen_lock:
+        now = time.time()
+        # Evict entries that have aged out so the dict doesn't grow forever
+        expired = [fid for fid, ts in _seen_files.items() if now - ts > _DEDUP_TTL]
+        for fid in expired:
+            del _seen_files[fid]
+
+        if file_id in _seen_files:
+            return False
+
+        _seen_files[file_id] = now
+        return True
 
 
 # ── /review-prd slash command ────────────────────────────────────────────────
@@ -107,13 +141,21 @@ def handle_modal_submission(ack, body, view, client):
     threading.Thread(target=_run, daemon=True).start()
 
 
-# ── .md file upload handler ──────────────────────────────────────────────────
+# ── .md / .pdf file upload handler ──────────────────────────────────────────
+
+_SUPPORTED_EXTENSIONS = (".md", ".pdf")
+
 
 @app.event("file_shared")
 def handle_file_shared(event, client, logger):
     """
-    Automatically review any Markdown file (.md) shared in a channel
-    where the bot is present.
+    Automatically review any .md or .pdf file shared in a channel where
+    the bot is present.
+
+    Slack dispatches file_shared once per channel the file appears in, so
+    the same file_id can arrive multiple times if the bot is in several
+    channels or if Slack retries the event.  The _claim_file() guard ensures
+    the pipeline runs exactly once per file regardless.
     """
     try:
         file_id = event.get("file_id")
@@ -123,40 +165,47 @@ def handle_file_shared(event, client, logger):
         if not channel_id or not file_id:
             return
 
-        file_info = client.files_info(file=file_id)
-        file_obj = file_info["file"]
-
-        if not file_obj.get("name", "").endswith(".md"):
+        # ── Deduplication: drop any repeat delivery of the same file ─────────
+        if not _claim_file(file_id):
+            logger.info(f"file_shared: duplicate event for {file_id}, skipping")
             return
 
-        prd_name = (
-            file_obj["name"]
-            .removesuffix(".md")
-            .replace("_", " ")
-            .replace("-", " ")
-            .title()
-        )
+        file_info = client.files_info(file=file_id)
+        file_obj = file_info["file"]
+        filename = file_obj.get("name", "")
 
-        # Download private file using the bot token
+        if not any(filename.lower().endswith(ext) for ext in _SUPPORTED_EXTENSIONS):
+            return
+
+        # ── Download file content ────────────────────────────────────────────
         response = requests.get(
             file_obj["url_private"],
             headers={"Authorization": f"Bearer {os.environ.get('SLACK_BOT_TOKEN')}"},
             timeout=30
         )
         response.raise_for_status()
-        prd_text = response.text.strip()
+
+        prd_text = extract_text(response.content, filename)
 
         if not prd_text:
             client.chat_postMessage(
                 channel=channel_id,
-                text=f"<@{user_id}> The uploaded file appears to be empty — nothing to review."
+                text=f"<@{user_id}> Could not extract text from *{filename}* — the file may be empty or image-only."
             )
             return
+
+        # Derive a readable PRD name from the filename
+        stem = filename
+        for ext in _SUPPORTED_EXTENSIONS:
+            if stem.lower().endswith(ext):
+                stem = stem[: -len(ext)]
+                break
+        prd_name = stem.replace("_", " ").replace("-", " ").title()
 
         client.chat_postMessage(
             channel=channel_id,
             text=(
-                f"<@{user_id}> Detected PRD file *{file_obj['name']}* — "
+                f"<@{user_id}> Detected PRD file *{filename}* — "
                 "running 4-agent review... :hourglass_flowing_sand: (~60 seconds)"
             )
         )
@@ -181,7 +230,6 @@ def _run_and_post(client, channel_id: str, user_id: str, prd_name: str, prd_text
         orchestrator = PRDReviewOrchestrator()
         review = orchestrator.review_prd(prd_text, prd_name)
 
-        # Save JSON output locally as well
         output_path = orchestrator.save_review(review)
         print(f"Review saved: {output_path}")
 
