@@ -1,4 +1,4 @@
-# Multi-Agent PRD Reviewer
+# Multi-Agent PRD Reviewer  ·  v5.1
 
 AI-powered system that uses four specialised agents to review Product Requirement Documents, combining rule-based validation with AI-driven technical, UX, and legal critique.
 
@@ -136,7 +136,17 @@ The Slack bot runs the same four-agent pipeline and posts the results as formatt
 
 **Two ways to submit a PRD:**
 1. **Slash command** — type `/review-prd` in any channel → paste PRD name and text into the modal → submit
-2. **File upload** — share any `.md` file in a channel where the bot is present → review runs automatically
+2. **File upload** — share a supported file in any channel where the bot is present → review runs automatically
+
+**Supported file formats:**
+
+| Format | Notes |
+|---|---|
+| `.md` | Markdown — native format, full fidelity |
+| `.pdf` | Exported PDF — text extracted via pypdf |
+| `.docx` | Word document — text extracted via python-docx |
+| Google Doc | Not directly downloadable — bot replies with export instructions |
+| `.doc` | Legacy Word binary — bot prompts to save as `.docx` or PDF |
 
 **Setup:**
 
@@ -150,7 +160,7 @@ In **OAuth & Permissions → Scopes → Bot Token Scopes**, add:
 |---|---|
 | `chat:write` | Post review results |
 | `commands` | Register `/review-prd` |
-| `files:read` | Download uploaded `.md` files |
+| `files:read` | Download uploaded `.md`, `.pdf`, and `.docx` files |
 
 #### 3. Enable Socket Mode
 In **Socket Mode**, toggle it on and create an **App-Level Token** with `connections:write` scope.  
@@ -245,7 +255,8 @@ multi-agent-prd-reviewer/
 │   ├── ux_system.txt             # System prompt: UX designer expertise
 │   └── legal_system.txt          # System prompt: legal and compliance expertise
 ├── utils/
-│   └── slack_formatter.py        # Converts review dict → Slack Block Kit blocks
+│   ├── slack_formatter.py        # Converts review dict → Slack Block Kit blocks
+│   └── file_reader.py            # Text extraction for .md, .pdf, .docx uploads
 ├── templates/
 │   └── prd_template.yaml         # Quality standards and scoring weights
 ├── examples/
@@ -326,6 +337,9 @@ Extend `orchestrator.py` to add further specialists:
 
 - **Python 3.11**
 - **Anthropic Claude API** (Claude Sonnet 4.6)
+- **slack-bolt** for Slack Socket Mode integration
+- **pypdf** for PDF text extraction
+- **python-docx** for Word document text extraction
 - **YAML** for template configuration
 - **JSON** for structured output
 
@@ -334,4 +348,5 @@ Extend `orchestrator.py` to add further specialists:
 **Built by:** Dimos Papadopoulos  
 **Role:** Product Leader  
 **Why:** To scale PM expertise through autonomous AI agents  
-**License:** BSD-3
+**License:** BSD-3  
+**[Changelog](CHANGELOG.md)**
