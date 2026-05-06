@@ -143,19 +143,25 @@ def handle_modal_submission(ack, body, view, client):
 
 # ── .md / .pdf file upload handler ──────────────────────────────────────────
 
-_SUPPORTED_EXTENSIONS = (".md", ".pdf")
+_SUPPORTED_EXTENSIONS = (".md", ".pdf", ".docx")
+
+# Slack filetype values set by the Google Drive integration
+_GOOGLE_DOC_FILETYPES = {"gdoc", "gdocument"}
 
 
 @app.event("file_shared")
 def handle_file_shared(event, client, logger):
     """
-    Automatically review any .md or .pdf file shared in a channel where
-    the bot is present.
+    Automatically review any .md, .pdf, or .docx file shared in a channel
+    where the bot is present.
 
     Slack dispatches file_shared once per channel the file appears in, so
     the same file_id can arrive multiple times if the bot is in several
     channels or if Slack retries the event.  The _claim_file() guard ensures
     the pipeline runs exactly once per file regardless.
+
+    Google Docs (shared via Slack's Drive integration) and legacy .doc files
+    cannot be downloaded directly — the bot replies with clear export guidance.
     """
     try:
         file_id = event.get("file_id")
@@ -173,7 +179,39 @@ def handle_file_shared(event, client, logger):
         file_info = client.files_info(file=file_id)
         file_obj = file_info["file"]
         filename = file_obj.get("name", "")
+        filetype = file_obj.get("filetype", "")
 
+        # ── Google Docs (Slack Drive integration) ────────────────────────────
+        # Google Docs shared via Slack's Drive integration have no downloadable
+        # URL accessible with a bot token — they require Google Workspace auth.
+        if filetype in _GOOGLE_DOC_FILETYPES or file_obj.get("is_external") and filetype.startswith("g"):
+            client.chat_postMessage(
+                channel=channel_id,
+                text=(
+                    f"<@{user_id}> Google Docs can't be downloaded directly via Slack. "
+                    f"To review *{filename}*, please either:\n"
+                    "• Export it as PDF (*File → Download → PDF*) and re-upload, or\n"
+                    "• Use `/review-prd` and paste the text directly."
+                )
+            )
+            return
+
+        # ── Legacy .doc format ───────────────────────────────────────────────
+        # Old binary .doc files require system-level tooling (LibreOffice/antiword).
+        # Guide the PM to save as .docx or export as PDF instead.
+        if filename.lower().endswith(".doc") and not filename.lower().endswith(".docx"):
+            client.chat_postMessage(
+                channel=channel_id,
+                text=(
+                    f"<@{user_id}> The legacy *.doc* format isn't supported. "
+                    f"To review *{filename}*, please:\n"
+                    "• Save as *.docx* (*File → Save As → Word Document*), or\n"
+                    "• Export as PDF and re-upload."
+                )
+            )
+            return
+
+        # ── Supported formats ────────────────────────────────────────────────
         if not any(filename.lower().endswith(ext) for ext in _SUPPORTED_EXTENSIONS):
             return
 
@@ -190,7 +228,11 @@ def handle_file_shared(event, client, logger):
         if not prd_text:
             client.chat_postMessage(
                 channel=channel_id,
-                text=f"<@{user_id}> Could not extract text from *{filename}* — the file may be empty or image-only."
+                text=(
+                    f"<@{user_id}> Could not extract text from *{filename}* — "
+                    "the file may be empty or image-only. "
+                    "Try exporting as PDF or use `/review-prd` to paste the text directly."
+                )
             )
             return
 

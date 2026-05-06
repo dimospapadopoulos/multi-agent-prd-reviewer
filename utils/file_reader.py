@@ -1,6 +1,6 @@
 """
 File content extraction for uploaded PRD files
-Supports .md (plaintext) and .pdf (via pypdf)
+Supports .md (plaintext), .pdf (via pypdf), .docx (via python-docx)
 """
 
 import io
@@ -28,6 +28,10 @@ def extract_text(content: bytes, filename: str) -> Optional[str]:
         text = _extract_pdf_text(content).strip()
         return text or None
 
+    if name.endswith(".docx"):
+        text = _extract_docx_text(content).strip()
+        return text or None
+
     return None
 
 
@@ -43,3 +47,12 @@ def _extract_pdf_text(content: bytes) -> str:
             pages.append(page_text.strip())
 
     return "\n\n".join(pages)
+
+
+def _extract_docx_text(content: bytes) -> str:
+    """Extract plain text from Word (.docx) bytes using python-docx."""
+    import docx
+
+    document = docx.Document(io.BytesIO(content))
+    paragraphs = [p.text for p in document.paragraphs if p.text.strip()]
+    return "\n\n".join(paragraphs)
