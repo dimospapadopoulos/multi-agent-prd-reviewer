@@ -328,6 +328,7 @@ Extend `orchestrator.py` to add further specialists:
 
 ## Related Projects
 
+- **[Brand video genAI evaluation project] (https://github.com/dimospapadopoulos/brand-videogen-eval)** An enterprise **image-to-video** evaluation harness that scores generated ad creative on what a **brand and marketer** actually care about — on-brand, campaign-usable, and safe to ship at scale — as a layer *on top of* technical benchmarks like VBench.
 - **[PRD Validator CLI](https://github.com/dimospapadopoulos/prd-completeness-validator)** - V1 of validation logic
 - **[PRD Validator Slack Bot](https://github.com/dimospapadopoulos/prd-validator-slack)** - V2 with Slack integration
 - **[Voice of Customer Synthesizer](https://github.com/dimospapadopoulos/voc-portfolio-clean)** - Customer feedback automation
